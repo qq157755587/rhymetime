@@ -17,7 +17,7 @@ export interface TTSOptions {
 // TTS Service Factory with intelligent fallback strategy
 export class TTSService {
   private static async callGeminiTTS(text: string, options: TTSOptions = {}): Promise<TTSResult> {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('Gemini API key not configured');
     }
@@ -55,7 +55,7 @@ export class TTSService {
   }
 
   private static async callGoogleCloudTTS(text: string, options: TTSOptions = {}): Promise<TTSResult> {
-    const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
+    const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
     if (!apiKey) {
       throw new Error('Google Cloud API key not configured');
     }
@@ -112,7 +112,7 @@ export class TTSService {
   }
 
   private static async callOpenAITTS(text: string, options: TTSOptions = {}): Promise<TTSResult> {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error('OpenAI API key not configured');
     }

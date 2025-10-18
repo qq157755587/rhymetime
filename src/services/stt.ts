@@ -15,11 +15,8 @@ export interface STTOptions {
 
 // STT Service for word timing analysis
 export class STTService {
-  private static async callGoogleCloudSTT(
-    audioBlob: Blob, 
-    options: STTOptions = {}
-  ): Promise<STTResult> {
-    const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
+  private static async callGoogleCloudSTT(audioBlob: Blob, options: STTOptions = {}): Promise<STTResult> {
+    const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
     if (!apiKey) {
       throw new Error('Google Cloud API key not configured');
     }
@@ -208,7 +205,7 @@ export class STTService {
   public static isSTTSupported(): boolean {
     return (
       // Check for Google Cloud API key
-      !!process.env.GOOGLE_CLOUD_API_KEY ||
+      !!import.meta.env.VITE_GOOGLE_CLOUD_API_KEY ||
       // Check for Web Speech API
       ('webkitSpeechRecognition' in window) ||
       ('SpeechRecognition' in window)

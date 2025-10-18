@@ -51,7 +51,7 @@ function buildPrompt(elements: string[]): string {
 // LLM Service Factory
 class LLMService {
   private static async callOpenAI(prompt: string): Promise<string> {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error('OpenAI API key not configured');
     }
@@ -89,7 +89,7 @@ class LLMService {
   }
 
   private static async callGemini(prompt: string): Promise<string> {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('Gemini API key not configured');
     }
@@ -122,9 +122,9 @@ class LLMService {
   }
 
   private static async callClaude(prompt: string): Promise<string> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
     if (!apiKey) {
-      throw new Error('Claude API key not configured');
+      throw new Error('Anthropic API key not configured');
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
