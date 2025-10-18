@@ -1,5 +1,53 @@
 import { GenerateRhymeRequest, GenerateRhymeResponse, RhymeData } from '../types';
 
+// Unified prompt configuration
+const SYSTEM_PROMPT = `You are a creative poet specializing in nursery rhymes for 2-3 year old toddlers. 
+Your task is to write a new, original nursery rhyme based on keywords provided by a child. 
+
+**--- RULES ---** 
+1.  **TARGET AUDIENCE:** 2-3 year olds. Vocabulary must be EXTREMELY simple (e.g., cat, sun, run, go, red, blue, see, look). 
+2.  **LENGTH:** The rhyme must be VERY short, exactly 4 lines. 
+3.  **STYLE:** The rhyme must be highly rhythmic, repetitive, and simple. Use AABB or ABCB rhyme schemes. Repetition of words or phrases is highly encouraged. 
+
+**--- EXAMPLES ---** 
+
+**[Keywords]:** Rain, Day 
+**[Rhyme]:** 
+Rain, rain, go away, 
+Come again another day. 
+
+**[Keywords]:** Star, Night 
+**[Rhyme]:** 
+Star light, star bright, 
+The first star I see tonight. 
+
+**[Keywords]:** Sheep, Wool 
+**[Rhyme]:** 
+Baa, baa, black sheep, 
+Have you any wool? 
+Yes sir, yes sir, 
+Three bags full. 
+
+**[Keywords]:** Jack, Jump 
+**[Rhyme]:** 
+Jack be nimble, 
+Jack be quick, 
+Jack jump over 
+The candlestick. 
+
+**[Keywords]:** One, Two 
+**[Rhyme]:** 
+One, two, 
+Buckle my shoe. 
+Three, four, 
+Knock at the door.`;
+
+// Unified prompt builder
+function buildPrompt(elements: string[]): string {
+  return `**[Keywords]:** ${elements.join(', ')}
+**[Rhyme]:**`;
+}
+
 // LLM Service Factory
 class LLMService {
   private static async callOpenAI(prompt: string): Promise<string> {
@@ -19,7 +67,7 @@ class LLMService {
         messages: [
           {
             role: 'system',
-            content: 'You are a creative children\'s nursery rhyme writer. Create engaging, educational, and fun English nursery rhymes that help children learn vocabulary and pronunciation. Keep the language simple, use repetitive patterns, and include rhyming words that are easy for children to remember.'
+            content: SYSTEM_PROMPT
           },
           {
             role: 'user',
@@ -54,7 +102,7 @@ class LLMService {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `You are a creative children's nursery rhyme writer. Create engaging, educational, and fun English nursery rhymes that help children learn vocabulary and pronunciation. Keep the language simple, use repetitive patterns, and include rhyming words that are easy for children to remember.\n\n${prompt}`
+            text: `${SYSTEM_PROMPT}\n\n${prompt}`
           }]
         }],
         generationConfig: {
@@ -90,7 +138,7 @@ class LLMService {
         model: 'claude-3-sonnet-20240229',
         max_tokens: 300,
         temperature: 0.8,
-        system: 'You are a creative children\'s nursery rhyme writer. Create engaging, educational, and fun English nursery rhymes that help children learn vocabulary and pronunciation. Keep the language simple, use repetitive patterns, and include rhyming words that are easy for children to remember.',
+        system: SYSTEM_PROMPT,
         messages: [
           {
             role: 'user',
@@ -113,24 +161,7 @@ class LLMService {
     elements: string[],
     provider: 'openai' | 'gemini' | 'claude' = 'gemini'
   ): Promise<string> {
-    const prompt = `Create a fun and educational English nursery rhyme that includes these elements: ${elements.join(', ')}.
-
-Requirements:
-- Write in simple English suitable for children aged 3-8
-- Include all the mentioned elements naturally in the story
-- Use rhyming patterns (AABB or ABAB)
-- Keep it 4-8 lines long
-- Make it educational and fun
-- Use repetitive sounds and words that help with pronunciation
-- Include action words or descriptive words that children can learn
-
-Example format:
-Little [element1] loves to [action]
-[Element2] dancing in the [place]
-[Element3] singing a sweet song
-All day long, all day long!
-
-Please create an original nursery rhyme now:`;
+    const prompt = buildPrompt(elements);
 
     const providers = [provider, 'gemini', 'openai', 'claude'].filter((p, i, arr) => arr.indexOf(p) === i);
 
