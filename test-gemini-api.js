@@ -1,5 +1,5 @@
 // Test script to verify Gemini API configuration
-const GEMINI_API_KEY = 'AIzaSyDdBP3sYkS4-J7h0S640337l6pHm3AMlt4';
+const GEMINI_API_KEY = '';
 
 async function testGeminiAPI() {
   console.log('🧪 Testing Gemini API...');
