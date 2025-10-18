@@ -66,7 +66,7 @@ const RhymeGenerator: React.FC<RhymeGeneratorProps> = ({ onRhymeGenerated }) => 
     try {
       const request: GenerateRhymeRequest = {
         elements: selectedElements.map(el => el.name.toLowerCase()),
-        llmProvider: 'gemini', // Default to Gemini
+        llmProvider: (import.meta.env.VITE_LLM_PROVIDER as 'gemini' | 'openai' | 'claude') || 'gemini',
         language: 'en'
       };
 
@@ -88,9 +88,28 @@ const RhymeGenerator: React.FC<RhymeGeneratorProps> = ({ onRhymeGenerated }) => 
       }
     } catch (error) {
       console.error('Error generating rhyme:', error);
-      toast.error('Sorry, we couldn\'t create your rhyme. Please try again!', {
+      
+      // Provide more specific error messages
+      let errorMessage = 'Sorry, we couldn\'t create your rhyme. Please try again!';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          errorMessage = 'API configuration issue. Please check your environment settings.';
+        } else if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('Environment')) {
+          errorMessage = 'Configuration error. Please check your API keys.';
+        }
+        
+        // In development, show the actual error
+        if (import.meta.env.DEV) {
+          errorMessage += ` (${error.message})`;
+        }
+      }
+      
+      toast.error(errorMessage, {
         icon: '😔',
-        duration: 4000,
+        duration: 6000,
       });
     } finally {
       setIsGenerating(false);

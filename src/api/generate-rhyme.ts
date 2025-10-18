@@ -48,6 +48,43 @@ function buildPrompt(elements: string[]): string {
 **[Rhyme]:**`;
 }
 
+// Environment validation
+function validateEnvironment() {
+  const llmProvider = import.meta.env.VITE_LLM_PROVIDER || 'gemini';
+  const issues: string[] = [];
+
+  console.log('🔧 Environment Check:');
+  console.log('- LLM Provider:', llmProvider);
+  console.log('- Gemini API Key:', import.meta.env.VITE_GEMINI_API_KEY ? '✅ Configured' : '❌ Missing');
+  console.log('- OpenAI API Key:', import.meta.env.VITE_OPENAI_API_KEY ? '✅ Configured' : '❌ Missing');
+  console.log('- Anthropic API Key:', import.meta.env.VITE_ANTHROPIC_API_KEY ? '✅ Configured' : '❌ Missing');
+
+  switch (llmProvider) {
+    case 'gemini':
+      if (!import.meta.env.VITE_GEMINI_API_KEY) {
+        issues.push('Gemini API key is required but not configured (VITE_GEMINI_API_KEY)');
+      }
+      break;
+    case 'openai':
+      if (!import.meta.env.VITE_OPENAI_API_KEY) {
+        issues.push('OpenAI API key is required but not configured (VITE_OPENAI_API_KEY)');
+      }
+      break;
+    case 'claude':
+      if (!import.meta.env.VITE_ANTHROPIC_API_KEY) {
+        issues.push('Anthropic API key is required but not configured (VITE_ANTHROPIC_API_KEY)');
+      }
+      break;
+  }
+
+  if (issues.length > 0) {
+    console.error('❌ Environment Issues:', issues);
+    throw new Error(`Environment configuration issues: ${issues.join(', ')}`);
+  }
+
+  console.log('✅ Environment validation passed');
+}
+
 // LLM Service Factory
 class LLMService {
   private static async callOpenAI(prompt: string): Promise<string> {
@@ -91,34 +128,51 @@ class LLMService {
   private static async callGemini(prompt: string): Promise<string> {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error('Gemini API key not configured');
+      throw new Error('Gemini API key not configured. Please set VITE_GEMINI_API_KEY in your environment variables.');
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    console.log('🔑 Gemini API Key configured:', apiKey ? `${apiKey.substring(0, 10)}...` : 'Not found');
+
+    const requestBody = {
+      contents: [{
+        parts: [{
+          text: `${SYSTEM_PROMPT}\n\n${prompt}`
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 1000,
+      }
+    };
+
+    console.log('📤 Sending request to Gemini API...');
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `${SYSTEM_PROMPT}\n\n${prompt}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 300,
-        }
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
     
+    console.log('📥 Gemini API Response:', {
+      status: response.status,
+      ok: response.ok,
+      data: data
+    });
+    
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Gemini API error');
+      const errorMessage = data.error?.message || `Gemini API error (${response.status})`;
+      console.error('❌ Gemini API Error:', errorMessage, data);
+      throw new Error(errorMessage);
     }
 
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    console.log('✅ Gemini API Success:', result ? `Generated ${result.length} characters` : 'Empty result');
+    
+    return result;
   }
 
   private static async callClaude(prompt: string): Promise<string> {
@@ -161,6 +215,9 @@ class LLMService {
     elements: string[],
     provider: 'openai' | 'gemini' | 'claude' = 'gemini'
   ): Promise<string> {
+    // Validate environment before proceeding
+    validateEnvironment();
+    
     const prompt = buildPrompt(elements);
 
     const providers = [provider, 'gemini', 'openai', 'claude'].filter((p, i, arr) => arr.indexOf(p) === i);
